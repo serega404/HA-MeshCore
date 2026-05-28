@@ -119,19 +119,18 @@ mode: queued
 
 trigger:
   - platform: webhook
-    webhook_id: meshcore_send
+    webhook_id: CHANGE_ME_RANDOM_WEBHOOK_ID
     allowed_methods:
       - GET
-    local_only: false
+    local_only: true
 
 variables:
   channel: "{{ trigger.query.get('channel', '-1') | int }}"
   message: "{{ trigger.query.get('message', '') }}"
-  secret: "{{ trigger.query.get('secret', '') }}"
 
 condition:
   - condition: template
-    value_template: "{{ secret == 'CHANGE_ME_SECRET' }}"
+    value_template: "{{ channel >= 0 }}"
   - condition: template
     value_template: "{{ message | trim | length > 0 }}"
 
@@ -144,10 +143,14 @@ action:
 
 ### Что менять Webhook->MeshCore
 
-Нужно заменить `CHANGE_ME_SECRET` на свой секрет и передавать его в query-параметре `secret`. Webhook принимает `GET`-запросы на `meshcore_send` с параметрами `channel`, `message` и `secret`.
+Нужно заменить:
+
+- `CHANGE_ME_RANDOM_WEBHOOK_ID` на случайную строку, например UUID или вывод `openssl rand -hex 32`. Это будет ваш "пароль" для доступа к этому webhook, так что не используйте что-то простое и очевидное.
+
+Webhook принимает `GET`-запросы с query-параметрами `channel` и `message`.
 
 Пример:
 
 ```text
-https://<your-home-assistant-url>/api/webhook/meshcore_send?channel=0&message=Hello&secret=CHANGE_ME_SECRET
+https://<your-home-assistant-url>/api/webhook/CHANGE_ME_RANDOM_WEBHOOK_ID?channel=0&message=Hello
 ```
