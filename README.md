@@ -1,4 +1,5 @@
 # HA-MeshCore
+
 Репозиторий с моими автоматизациями для аддона MeshCore в HomeAssistant
 
 ## MeshCore to Telegram topics
@@ -37,8 +38,13 @@ variables:
   tg_thread: "{{ tg_thread_map.get(mesh_channel | string) }}"
 ```
 
-## Telegram topics to MeshCore
+### Что менять MeshCore->TG
 
+Нужно заменить `owner name lower case` на имя отправителя MeshCore в нижнем регистре, которого вы хотите игнорировать (например, самого себя, если не хотите получать свои сообщения в Telegram). Также нужно настроить `tg_thread_map`, указав соответствия между каналами MeshCore и топиками Telegram.
+
+Так же потребуется заменить `notify.s_home_bot_meshcore` на ваш идентификатор уведомлений Telegram в Home Assistant, если он отличается.
+
+## Telegram topics to MeshCore
 
 ```yaml
 alias: Telegram topics to MeshCore
@@ -72,3 +78,7 @@ variables:
     "6": 2
   mesh_channel: "{{ tg_thread_to_mesh_map.get(tg_thread | string) }}"
 ```
+
+### Что менять TG->MeshCore
+
+Нужно настроить `tg_thread_to_mesh_map`, указав соответствия между топиками Telegram и каналами MeshCore. Также убедитесь, что `event.s_home_bot_update_event` соответствует вашему идентификатору события обновления Telegram в Home Assistant, если он отличается.
