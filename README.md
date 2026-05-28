@@ -109,3 +109,45 @@ variables:
 Нужно настроить `tg_thread_to_mesh_map`, указав соответствия между топиками Telegram и каналами MeshCore. В `mesh_max_bytes` задается максимальный размер итогового сообщения `Имя: текст` в байтах; если лимит превышен, автоматизация отправит предупреждение обратно в тот же топик Telegram реплаем на исходное сообщение и не будет отправлять сообщение в MeshCore.
 
 Также убедитесь, что `event.s_home_bot_update_event` соответствует вашему идентификатору события обновления Telegram, а `notify.s_home_bot_meshcore` соответствует вашему идентификатору уведомлений Telegram в Home Assistant, если они отличаются.
+
+## Webhook to MeshCore channel
+
+```yaml
+alias: Webhook to MeshCore channel
+id: webhook_to_meshcore_channel
+mode: queued
+
+trigger:
+  - platform: webhook
+    webhook_id: meshcore_send
+    allowed_methods:
+      - GET
+    local_only: false
+
+variables:
+  channel: "{{ trigger.query.get('channel', '-1') | int }}"
+  message: "{{ trigger.query.get('message', '') }}"
+  secret: "{{ trigger.query.get('secret', '') }}"
+
+condition:
+  - condition: template
+    value_template: "{{ secret == 'CHANGE_ME_SECRET' }}"
+  - condition: template
+    value_template: "{{ message | trim | length > 0 }}"
+
+action:
+  - service: meshcore.send_channel_message
+    data:
+      channel_idx: "{{ channel }}"
+      message: "{{ message }}"
+```
+
+### Что менять Webhook->MeshCore
+
+Нужно заменить `CHANGE_ME_SECRET` на свой секрет и передавать его в query-параметре `secret`. Webhook принимает `GET`-запросы на `meshcore_send` с параметрами `channel`, `message` и `secret`.
+
+Пример:
+
+```text
+https://<your-home-assistant-url>/api/webhook/meshcore_send?channel=0&message=Hello&secret=CHANGE_ME_SECRET
+```
