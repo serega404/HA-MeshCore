@@ -120,31 +120,29 @@ variables:
 
 ```yaml
 alias: Webhook to MeshCore channel
-id: webhook_to_meshcore_channel
-mode: queued
-
-trigger:
-  - platform: webhook
-    webhook_id: CHANGE_ME_RANDOM_WEBHOOK_ID
+triggers:
+  - webhook_id: 3f66647a2f6b960c62792b57536e95ffb17a25901b44538647ad8a7790fb7ffd
     allowed_methods:
       - GET
     local_only: true
-
+    trigger: webhook
 variables:
-  channel: "{{ trigger.query.get('channel', '-1') | int }}"
+  channel: "{{ trigger.query.get('channel', '-1') | int(-1) }}"
   message: "{{ trigger.query.get('message', '') }}"
-
-condition:
+  region: "{{ trigger.query.get('region', '<CHANGE REGION>') | trim | default('<CHANGE REGION>', true) }}"
+conditions:
   - condition: template
-    value_template: "{{ channel >= 0 }}"
+    value_template: '{{ channel >= 0 }}'
   - condition: template
-    value_template: "{{ message | trim | length > 0 }}"
-
-action:
-  - service: meshcore.send_channel_message
+    value_template: '{{ message | trim | length > 0 }}'
+actions:
+  - action: meshcore.send_channel_message
     data:
       channel_idx: "{{ channel }}"
       message: "{{ message }}"
+      scope: "{{ region }}"
+
+mode: queued
 ```
 
 ### Что менять Webhook->MeshCore
