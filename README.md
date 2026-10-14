@@ -56,58 +56,75 @@ variables:
 
 ```yaml
 alias: Telegram topics to MeshCore
-description: ""
+description: ''
 triggers:
   - trigger: state
     entity_id:
       - event.s_home_bot_update_event
+
 conditions:
   - condition: state
     entity_id: event.s_home_bot_update_event
     attribute: event_type
     state: telegram_text
   - condition: template
-    value_template: "{{ mesh_channel is not none }}"
+    value_template: '{{ mesh_channel is not none }}'
   - condition: template
-    value_template: "{{ tg_text | trim | length > 0 }}"
+    value_template: '{{ tg_text | trim | length > 0 }}'
+
 actions:
   - choose:
       - conditions:
           - condition: template
-            value_template: "{{ mesh_message_bytes | int <= mesh_max_bytes }}"
+            value_template: '{{ mesh_message_bytes | int <= mesh_max_bytes }}'
         sequence:
           - action: meshcore.send_channel_message
             data:
-              channel_idx: "{{ mesh_channel | int }}"
-              message: "{{ mesh_message }}"
+              channel_idx: '{{ mesh_channel | int }}'
+              message: '{{ mesh_message }}'
+              scope: '{{ mesh_region }}'
     default:
       - action: telegram_bot.send_message
         data:
           entity_id:
             - notify.s_home_bot_meshcore
-          message_thread_id: "{{ tg_thread }}"
-          reply_to_message_id: "{{ tg_message_id }}"
+          message_thread_id: '{{ tg_thread }}'
+          reply_to_message_id: '{{ tg_message_id }}'
           parse_mode: plain_text
           message: >-
-            Сообщение не отправлено в MeshCore: {{ mesh_message_bytes | int }} байт,
-            максимум {{ mesh_max_bytes }} байт.
+            Сообщение не отправлено в MeshCore: {{ mesh_message_bytes | int }}
+            байт, максимум {{ mesh_max_bytes }} байт.
+
 mode: queued
+
 variables:
-  tg_thread: "{{ trigger.to_state.attributes.message_thread_id | int(-1) }}"
-  tg_message_id: "{{ trigger.to_state.attributes.id | int }}"
-  tg_text: "{{ trigger.to_state.attributes.text | default('', true) }}"
-  tg_sender: "{{ trigger.to_state.attributes.from_first | default('Telegram', true) }}"
-  mesh_message: "{{ tg_sender }}: {{ tg_text }}"
+  # Регион для всех исходящих сообщений MeshCore
+  mesh_region: 'ru'
+
+  tg_thread: '{{ trigger.to_state.attributes.message_thread_id | int(-1) }}'
+  tg_message_id: '{{ trigger.to_state.attributes.id | int }}'
+  tg_text: '{{ trigger.to_state.attributes.text | default("", true) }}'
+  tg_sender: '{{ trigger.to_state.attributes.from_first | default("Telegram", true) }}'
+
+  mesh_message: '{{ tg_sender }}: {{ tg_text }}'
   mesh_max_bytes: 140
+
   mesh_message_bytes: >-
-    {%- set message = (trigger.to_state.attributes.from_first | default('Telegram', true)) ~ ': ' ~ (trigger.to_state.attributes.text | default('', true)) -%}
+    {%- set message = (trigger.to_state.attributes.from_first |
+    default('Telegram', true)) ~ ': ' ~ (trigger.to_state.attributes.text |
+    default('', true)) -%}
     {%- set message_b64 = message | base64_encode -%}
-    {{ (((message_b64 | length) * 3 / 4) | round(0, 'floor') | int) - (message_b64 | regex_findall('=') | length) }}
+    {{
+      (((message_b64 | length) * 3 / 4) | round(0, 'floor') | int)
+      - (message_b64 | regex_findall('=') | length)
+    }}
+
   tg_thread_to_mesh_map:
-    "1": 0
-    "4": 3
-    "6": 2
-  mesh_channel: "{{ tg_thread_to_mesh_map.get(tg_thread | string) }}"
+    '1': 0
+    '4': 3
+    '6': 2
+
+  mesh_channel: '{{ tg_thread_to_mesh_map.get(tg_thread | string) }}'
 ```
 
 ### Что менять TG->MeshCore
